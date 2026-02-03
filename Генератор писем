@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор писем</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-input: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-tertiary: #ec4899;
+            --accent-glow: rgba(99, 102, 241, 0.25);
+            --text-white: #ffffff;
+            --text-gray: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-white);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Анимированный фон */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-animation::before,
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-animation::before {
+            background: var(--accent-primary);
+            top: -200px;
+            left: -200px;
+        }
+
+        .bg-animation::after {
+            background: var(--accent-tertiary);
+            bottom: -200px;
+            right: -200px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, 50px) scale(1.1); }
+            66% { transform: translate(-30px, 20px) scale(0.9); }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 50px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Заголовок */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 16px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            color: var(--text-gray);
+            font-size: 1.15rem;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        /* Основная карточка */
+        .main-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        /* Табы типов писем */
+        .letter-types {
+            display: flex;
+            overflow-x: auto;
+            background: var(--bg-input);
+            padding: 8px;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .letter-types::-webkit-scrollbar {
+            height: 0;
+        }
+
+        .type-btn {
+            flex-shrink: 0;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: var(--text-gray);
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .type-btn:hover {
+            color: var(--text-white);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .type-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        /* Контент формы */
+        .form-content {
+            padding: 40px;
+        }
+
+        /* Секции */
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Сетка полей */
+        .fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        input, textarea, select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: var(--text-white);
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.7;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 44px;
+        }
+
+        /* Переключатели параметров */
+        .options-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .option-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .option-chip:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .option-chip.selected {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border-color: var(--accent-primary);
+        }
+
+        .option-chip input {
+            display: none;
+        }
+
+        .chip-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .option-chip.selected .chip-indicator {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .chip-indicator::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .option-chip.selected .chip-indicator::after {
+            opacity: 1;
+        }
+
+        .chip-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-gray);
+        }
+
+        .option-chip.selected .chip-label {
+            color: var(--text-white);
+        }
+
+        /* Слайдеры */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            border: none;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--accent-glow);
+        }
+
+        /* Кнопка генерации */
+        .generate-section {
+            padding: 30px 40px 40px;
+            background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.03));
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            background-size: 200% 200%;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-family: 'Nunito', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            animation: gradientShift 5s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-generate span {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* Загрузка */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.9);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .loading-overlay.visible {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent-primary);
+            border-right-color: var(--accent-secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-gray);
+            font-size: 16px;
+        }
+
+        /* Ошибка */
+        .error-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--error);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 200;
+            transition: transform 0.4s ease;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .error-toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Результат */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        .result-card.visible {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px;
+            background: var(--bg-input);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-white);
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .btn-action.success {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .result-body {
+            padding: 32px;
+        }
+
+        .result-content {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 32px;
+            white-space: pre-wrap;
+            line-height: 1.9;
+            font-size: 15px;
+            border-left: 4px solid var(--accent-primary);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .result-content::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 4px;
+        }
+
+        .result-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 16px;
+            }
+
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            .form-content {
+                padding: 24px;
+            }
+
+            .generate-section {
+                padding: 24px;
+            }
+
+            .result-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .result-actions {
+                justify-content: stretch;
+            }
+
+            .btn-action {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">✉️</div>
+                <span class="logo-text">AI Powered</span>
+            </div>
+            <h1>Генератор писем</h1>
+            <p class="subtitle">Создавайте идеальные письма любого типа за секунды — от деловых до личных</p>
+        </header>
+
+        <div class="main-card">
+            <!-- Типы писем -->
+            <div class="letter-types">
+                <button class="type-btn active" data-type="business">💼 Деловое</button>
+                <button class="type-btn" data-type="complaint">📢 Жалоба</button>
+                <button class="type-btn" data-type="request">🙏 Просьба</button>
+                <button class="type-btn" data-type="thanks">🙌 Благодарность</button>
+                <button class="type-btn" data-type="apology">💐 Извинение</button>
+                <button class="type-btn" data-type="congratulation">🎉 Поздравление</button>
+                <button class="type-btn" data-type="invitation">📩 Приглашение</button>
+                <button class="type-btn" data-type="recommendation">⭐ Рекомендация</button>
+                <button class="type-btn" data-type="cover">📄 Сопроводительное</button>
+                <button class="type-btn" data-type="resignation">👋 Увольнение</button>
+                <button class="type-btn" data-type="love">💕 Любовное</button>
+                <button class="type-btn" data-type="other">✨ Другое</button>
+            </div>
+
+            <div class="form-content">
+                <!-- Участники -->
+                <div class="section">
+                    <div class="section-title">Участники переписки</div>
+                    <div class="fields-grid">
+                        <div class="field">
+                            <label>От кого (ваше имя)</label>
+                            <input type="text" id="senderName" placeholder="Иван Петров">
+                        </div>
+                        <div class="field">
+                            <label>Ваша должность / роль</label>
+                            <input type="text" id="senderRole" placeholder="Менеджер проектов / Студент">
+                        </div>
+                        <div class="field">
+                            <label>Кому (имя получателя)</label>
+                            <input type="text" id="recipientName" placeholder="Анна Сидорова">
+                        </div>
+                        <div class="field">
+                            <label>Должность / роль получателя</label>
+                            <input type="text" id="recipientRole" placeholder="HR-директор / Декан">
+                        </div>
+                        <div class="field">
+                            <label>Организация / компания</label>
+                            <input type="text" id="organization" placeholder="ООО «Рога и копыта»">
+                        </div>
+                        <div class="field">
+                            <label>Ваши отношения</label>
+                            <select id="relationship">
+                                <option value="formal">Формальные (незнакомы)</option>
+                                <option value="professional">Рабочие (коллеги)</option>
+                                <option value="acquaintance">Знакомые</option>
+                                <option value="friendly">Дружеские</option>
+                                <option value="close">Близкие</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Содержание -->
+                <div class="section">
+                    <div class="section-title">Содержание письма</div>
+                    <div class="fields-grid">
+                        <div class="field full-width">
+                            <label>Тема письма</label>
+                            <input type="text" id="subject" placeholder="О чём это письмо в двух словах">
+                        </div>
+                        <div class="field full-width">
+                            <label>Подробное описание ситуации</label>
+                            <textarea id="situation" placeholder="Опишите подробно: что случилось, какой контекст, что важно упомянуть..."></textarea>
+                        </div>
+                        <div class="field full-width">
+                            <label>Цель письма / чего хотите добиться</label>
+                            <input type="text" id="goal" placeholder="Получить ответ / Договориться о встрече / Решить проблему">
+                        </div>
+                        <div class="field full-width">
+                            <label>Дополнительные детали (необязательно)</label>
+                            <textarea id="details" placeholder="Сроки, цифры, факты, которые нужно упомянуть..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Тон и стиль -->
+                <div class="section">
+                    <div class="section-title">Тон письма</div>
+                    <div class="options-row" id="toneOptions">
+                        <label class="option-chip selected" data-value="neutral">
+                            <input type="radio" name="tone" value="neutral" checked>
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">😐 Нейтральный</span>
+                        </label>
+                        <label class="option-chip" data-value="formal">
+                            <input type="radio" name="tone" value="formal">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">🎩 Официальный</span>
+                        </label>
+                        <label class="option-chip" data-value="friendly">
+                            <input type="radio" name="tone" value="friendly">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">😊 Дружелюбный</span>
+                        </label>
+                        <label class="option-chip" data-value="strict">
+                            <input type="radio" name="tone" value="strict">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">😤 Строгий</span>
+                        </label>
+                        <label class="option-chip" data-value="emotional">
+                            <input type="radio" name="tone" value="emotional">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">💖 Эмоциональный</span>
+                        </label>
+                        <label class="option-chip" data-value="humorous">
+                            <input type="radio" name="tone" value="humorous">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">😄 С юмором</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Параметры -->
+                <div class="section">
+                    <div class="section-title">Параметры</div>
+                    <div class="fields-grid">
+                        <div class="field">
+                            <label>Язык</label>
+                            <select id="language">
+                                <option value="ru">🇷🇺 Русский</option>
+                                <option value="en">🇬🇧 English</option>
+                                <option value="de">🇩🇪 Deutsch</option>
+                                <option value="fr">🇫🇷 Français</option>
+                                <option value="es">🇪🇸 Español</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Формат</label>
+                            <select id="format">
+                                <option value="email">📧 Email</option>
+                                <option value="official">📜 Официальное письмо</option>
+                                <option value="message">💬 Сообщение</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <div class="slider-container">
+                                <div class="slider-header">
+                                    <label>Длина письма</label>
+                                    <span class="slider-value" id="lengthValue">Средняя</span>
+                                </div>
+                                <input type="range" id="length" min="1" max="3" value="2">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="slider-container">
+                                <div class="slider-header">
+                                    <label>Уровень формальности</label>
+                                    <span class="slider-value" id="formalityValue">Средний</span>
+                                </div>
+                                <input type="range" id="formality" min="1" max="5" value="3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Дополнительные опции -->
+                <div class="section">
+                    <div class="section-title">Включить в письмо</div>
+                    <div class="options-row" id="includeOptions">
+                        <label class="option-chip" data-value="greeting">
+                            <input type="checkbox" name="include" value="greeting" checked>
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">👋 Приветствие</span>
+                        </label>
+                        <label class="option-chip" data-value="closing">
+                            <input type="checkbox" name="include" value="closing" checked>
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">✍️ Подпись</span>
+                        </label>
+                        <label class="option-chip" data-value="calltoaction">
+                            <input type="checkbox" name="include" value="calltoaction">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">📞 Призыв к действию</span>
+                        </label>
+                        <label class="option-chip" data-value="deadline">
+                            <input type="checkbox" name="include" value="deadline">
+                            <span class="chip-indicator"></span>
+                            <span class="chip-label">⏰ Дедлайн</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="generate-section">
+                <button class="btn-generate" onclick="generateLetter()">
+                    <span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        Сгенерировать письмо
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Результат -->
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <h2 class="result-title">✨ Ваше письмо готово</h2>
+                <div class="result-actions">
+                    <button class="btn-action" onclick="copyResult()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span id="copyText">Копировать</span>
+                    </button>
+                    <button class="btn-action" onclick="regenerate()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Ещё вариант
+                    </button>
+                </div>
+            </div>
+            <div class="result-body">
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Загрузка -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">ИИ пишет ваше письмо...</div>
+    </div>
+
+    <!-- Ошибка -->
+    <div class="error-toast" id="errorToast"></div>
+
+    <script>
+        // Состояние
+        let selectedType = 'business';
+        let selectedTone = 'neutral';
+
+        // Инициализация
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedType = btn.dataset.type;
+            });
+        });
+
+        document.querySelectorAll('#toneOptions .option-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('#toneOptions .option-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                selectedTone = chip.dataset.value;
+            });
+        });
+
+        document.querySelectorAll('#includeOptions .option-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                chip.classList.toggle('selected');
+                chip.querySelector('input').checked = chip.classList.contains('selected');
+            });
+            // Инициализация
+            if (chip.querySelector('input').checked) {
+                chip.classList.add('selected');
+            }
+        });
+
+        // Слайдеры
+        const lengthSlider = document.getElementById('length');
+        const lengthValue = document.getElementById('lengthValue');
+        const lengthLabels = ['Короткая', 'Средняя', 'Длинная'];
+
+        lengthSlider.addEventListener('input', () => {
+            lengthValue.textContent = lengthLabels[lengthSlider.value - 1];
+        });
+
+        const formalitySlider = document.getElementById('formality');
+        const formalityValue = document.getElementById('formalityValue');
+        const formalityLabels = ['Очень низкий', 'Низкий', 'Средний', 'Высокий', 'Очень высокий'];
+
+        formalitySlider.addEventListener('input', () => {
+            formalityValue.textContent = formalityLabels[formalitySlider.value - 1];
+        });
+
+        // Генерация
+        async function generateLetter() {
+            const data = {
+                senderName: document.getElementById('senderName').value.trim(),
+                senderRole: document.getElementById('senderRole').value.trim(),
+                recipientName: document.getElementById('recipientName').value.trim(),
+                recipientRole: document.getElementById('recipientRole').value.trim(),
+                organization: document.getElementById('organization').value.trim(),
+                relationship: document.getElementById('relationship').value,
+                subject: document.getElementById('subject').value.trim(),
+                situation: document.getElementById('situation').value.trim(),
+                goal: document.getElementById('goal').value.trim(),
+                details: document.getElementById('details').value.trim(),
+                language: document.getElementById('language').value,
+                format: document.getElementById('format').value,
+                length: ['короткое', 'среднее', 'длинное'][document.getElementById('length').value - 1],
+                formality: formalityLabels[document.getElementById('formality').value - 1],
+            };
+
+            const includes = Array.from(document.querySelectorAll('#includeOptions input:checked')).map(i => i.value);
+
+            if (!data.situation) {
+                showError('Опишите ситуацию');
+                return;
+            }
+
+            showLoading(true);
+            hideResult();
+
+            const typeLabels = {
+                business: 'деловое письмо',
+                complaint: 'жалоба',
+                request: 'просьба',
+                thanks: 'благодарственное письмо',
+                apology: 'письмо с извинениями',
+                congratulation: 'поздравление',
+                invitation: 'приглашение',
+                recommendation: 'рекомендательное письмо',
+                cover: 'сопроводительное письмо',
+                resignation: 'заявление об увольнении',
+                love: 'любовное письмо',
+                other: 'письмо'
+            };
+
+            const toneLabels = {
+                neutral: 'нейтральный',
+                formal: 'официальный',
+                friendly: 'дружелюбный',
+                strict: 'строгий',
+                emotional: 'эмоциональный',
+                humorous: 'с юмором'
+            };
+
+            const langLabels = {
+                ru: 'русском',
+                en: 'английском',
+                de: 'немецком',
+                fr: 'французском',
+                es: 'испанском'
+            };
+
+            const formatLabels = {
+                email: 'формат email',
+                official: 'официальный формат с шапкой',
+                message: 'формат сообщения'
+            };
+
+            const prompt = `Напиши ${typeLabels[selectedType]} на ${langLabels[data.language]} языке.
+
+ДАННЫЕ:
+- Отправитель: ${data.senderName || '[Имя отправителя]'}
+- Должность отправителя: ${data.senderRole || '[не указана]'}
+- Получатель: ${data.recipientName || '[Имя получателя]'}
+- Должность получателя: ${data.recipientRole || '[не указана]'}
+- Организация: ${data.organization || '[не указана]'}
+- Отношения: ${data.relationship}
+- Тема: ${data.subject || '[не указана]'}
+- Ситуация: ${data.situation}
+- Цель: ${data.goal || '[не указана]'}
+- Дополнительно: ${data.details || '[нет]'}
+
+ПАРАМЕТРЫ:
+- Тон: ${toneLabels[selectedTone]}
+- Формат: ${formatLabels[data.format]}
+- Длина: ${data.length}
+- Формальность: ${data.formality}
+- Включить: ${includes.length > 0 ? includes.join(', ') : 'стандартные элементы'}
+
+Напиши только текст письма, без комментариев и пояснений.`;
+
+            try {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1500,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+                const text = result.content
+                    .filter(item => item.type === 'text')
+                    .map(item => item.text)
+                    .join('\n');
+
+                showResult(text);
+            } catch (error) {
+                showError('Ошибка: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function regenerate() {
+            generateLetter();
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('visible', show);
+            document.querySelector('.btn-generate').disabled = show;
+        }
+
+        function showError(message) {
+            const toast = document.getElementById('errorToast');
+            toast.textContent = message;
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 4000);
+        }
+
+        function showResult(text) {
+            document.getElementById('resultContent').textContent = text;
+            document.getElementById('resultCard').classList.add('visible');
+            document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function hideResult() {
+            document.getElementById('resultCard').classList.remove('visible');
+        }
+
+        function copyResult() {
+            const text = document.getElementById('resultContent').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.btn-action');
+                const copyText = document.getElementById('copyText');
+                btn.classList.add('success');
+                copyText.textContent = 'Скопировано!';
+                setTimeout(() => {
+                    btn.classList.remove('success');
+                    copyText.textContent = 'Копировать';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
